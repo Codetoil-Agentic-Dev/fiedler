@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Unit tests, GameTests and client smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build and run the unit tests
+        run: ./gradlew build
+
+      # Every Fiedler GameTest (one per connection, plus the feature-graph and command checks) runs here, on NeoForge's
+      # development GameTest server. NeoForge only registers GameTests outside production, so this is where they belong.
+      - name: Run all GameTests on a headless server
+        run: ./gradlew runGameTestServer
+
+      - name: Stage the mod for the test client
+        run: |
+          rm -rf run
+          mkdir -p run/mods
+          cp build/libs/fiedler-*.jar run/mods/
+
+      # A real NeoForge 26.3 client, launched by HeadlessMc under Xvfb with an offline account (the CI use case),
+      # loads Fiedler, joins a singleplayer world and quits. The step fails if the game crashes.
+      - name: Launch a NeoForge 26.3 client with Fiedler (MC-Runtime-Test)
+        uses: headlesshq/mc-runtime-test@5.0.0
+        with:
+          mc: '26.3'
+          modloader: neoforge
+          mc-runtime-test: neoforge
+          java: 25
+          headlessmc-command: '--jvm "-Djava.awt.headless=true -DMcRuntimeGameTest=false"'

@@ -87,10 +87,17 @@ You need JDK 25 (Minecraft 26.3's Java version). The build uses NeoForge 26.3.0.
 `build` compiles the mod, runs the JUnit tests and produces `build/libs/fiedler-1.0.0.jar`. `runGameTestServer` starts
 a headless server, runs every GameTest and exits non-zero if any test fails.
 
+CI (`.github/workflows/test.yml`) runs both on every push. It then launches a real NeoForge 26.3 client with the built jar
+through [MC-Runtime-Test](https://github.com/headlesshq/mc-runtime-test), which uses HeadlessMc. The client joins a
+singleplayer world and the job fails if the game crashes. GameTests stay on the development server, because NeoForge
+only registers GameTests outside production.
+
 ## Known limits
 
 - The two new recipes have no recipe-book unlock advancements. They can be crafted from the start but don't appear in
   the recipe book until crafted once.
+- Before CI, the client was never launched: the build container can't open a game window. The MC-Runtime-Test step is
+  the client check.
 - Install the mod on both client and server. The enchanting-power change runs server-side; the client copy only adds
   the glyph particles.
 - The tests use `GameTestHelper#makeMockServerPlayerInLevel`, which 26.3 marks as deprecated-for-removal (it is still
