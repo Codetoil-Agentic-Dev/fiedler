@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "group": "sticky_piston",
+  "key": {
+    "P": "minecraft:piston",
+    "R": "minecraft:resin_clump"
+  },
+  "pattern": [
+    "R",
+    "P"
+  ],
+  "result": {
+    "id": "minecraft:sticky_piston"
+  }
+}

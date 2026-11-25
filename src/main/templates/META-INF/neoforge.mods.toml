@@ -1,0 +1,33 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="${mod_license}"
+issueTrackerURL=""
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+description='''
+Good update design, applied: Fiedler adds no new blocks or items. It only adds connections, new interactions
+between features that shipped years apart. Every connection links a newer feature to an older one, nothing is
+made obsolete, and every advertised connection is backed by an automated GameTest (no "coming never").
+
+Named after Miroslav Fiedler's algebraic connectivity λ₂, which is positive exactly when a graph is connected.
+'''
+
+[[mixins]]
+config="${mod_id}.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
