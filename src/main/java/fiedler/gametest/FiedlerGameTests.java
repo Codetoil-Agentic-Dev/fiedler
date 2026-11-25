@@ -77,7 +77,7 @@ public final class FiedlerGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, Fiedler.MODID);
     /** name → max ticks */
     private static final Map<String, Integer> TESTS = new LinkedHashMap<>();
-    private static final Identifier ARENA = Fiedler.id("arena");    // 9×6×9, smooth-stone floor, open sky
+    public static final Identifier ARENA = Fiedler.id("arena");    // 9×6×9, smooth-stone floor, open sky
 
     static {
         test("moss_restoration", 20, FiedlerGameTests::mossRestoration);
@@ -90,6 +90,8 @@ public final class FiedlerGameTests {
         test("sulfur_gunpowder", 20, FiedlerGameTests::sulfurGunpowder);
         test("feature_graph", 20, FiedlerGameTests::featureGraph);
         test("graph_command", 20, FiedlerGameTests::graphCommand);
+        // Client tests: functions only. Their instances are registered by fiedler.client.FiedlerClientGameTests.
+        ClientTests.TESTS.keySet().forEach(name -> FUNCTIONS.register(name, () -> helper -> ClientTests.run(name, helper)));
     }
 
     private FiedlerGameTests() {}
@@ -242,11 +244,15 @@ public final class FiedlerGameTests {
         CatSitOnCushionGoal goal = CushionCats.goalOf(cat);
         check(helper, goal != null, "cats should get the cushion goal when they join the level");
         goal.searchNow();
-        helper.succeedWhen(() -> {
-            check(helper, cat.getVehicle() == cushion, "cat has not sat on the cushion yet");
-            check(helper, CushionCats.shoo(cushion), "shooing should report the cat");
-            check(helper, !cat.isPassenger(), "shooed cat should be off the cushion");
-        });
+        helper.startSequence()
+                .thenWaitUntil(() -> check(helper, cat.getVehicle() == cushion, "cat has not sat on the cushion yet"))
+                .thenExecute(() -> {
+                    check(helper, CushionCats.shoo(cushion), "shooing should report the cat");
+                    check(helper, !cat.isPassenger(), "shooed cat should be off the cushion");
+                })
+                // Regression: the goal used to keep running after a shoo and put the cat straight back on the seat.
+                .thenExecuteAfter(60, () -> check(helper, !cat.isPassenger() && !cushion.isVehicle(), "a shooed cat must not climb back onto the cushion"))
+                .thenSucceed();
     }
 
     /** Chiseled bookshelf → enchanting table: books on shelves count, 6 books = 1 bookshelf, measured in the real menu. */

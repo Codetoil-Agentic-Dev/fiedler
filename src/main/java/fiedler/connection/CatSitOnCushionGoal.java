@@ -19,6 +19,7 @@ public class CatSitOnCushionGoal extends Goal {
     private int cooldown;
     private int sitTicks;
     private int walkTicks;
+    private boolean shooed;
 
     public CatSitOnCushionGoal(Cat cat) {
         this.cat = cat;
@@ -46,7 +47,7 @@ public class CatSitOnCushionGoal extends Goal {
     @Override
     public boolean canContinueToUse() {
         Cushion seat = this.target;
-        if (seat == null || !seat.isAlive() || this.cat.isOrderedToSit()) return false;
+        if (this.shooed || seat == null || !seat.isAlive() || this.cat.isOrderedToSit()) return false;
         if (this.cat.isPassenger()) return this.cat.getVehicle() == seat && this.sitTicks > 0;
         return !seat.isVehicle() && this.walkTicks < GIVE_UP_AFTER_TICKS;
     }
@@ -54,6 +55,7 @@ public class CatSitOnCushionGoal extends Goal {
     @Override
     public void start() {
         this.walkTicks = 0;
+        this.shooed = false;
         if (!this.cat.isPassenger()) {
             this.sitTicks = this.napLength();
             if (this.target != null) this.cat.getNavigation().moveTo(this.target, 0.8);
@@ -92,8 +94,12 @@ public class CatSitOnCushionGoal extends Goal {
         }
     }
 
-    /** Called when a player shoos the cat off its cushion. */
+    /**
+     * Called when a player shoos the cat off its cushion. This ends the running goal, so the cat doesn't walk straight
+     * back onto the seat the player wanted, and keeps the cat away for a minute.
+     */
     void shooed() {
+        this.shooed = true;
         this.cooldown = SHOOED_COOLDOWN_TICKS;
     }
 

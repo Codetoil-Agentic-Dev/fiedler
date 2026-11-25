@@ -89,15 +89,28 @@ a headless server, runs every GameTest and exits non-zero if any test fails.
 
 CI (`.github/workflows/test.yml`) runs both on every push. It then launches a real NeoForge 26.3 client with the built jar
 through [MC-Runtime-Test](https://github.com/headlesshq/mc-runtime-test), which uses HeadlessMc. The client joins a
-singleplayer world and the job fails if the game crashes. GameTests stay on the development server, because NeoForge
-only registers GameTests outside production.
+singleplayer world and runs every `fiedler:*` GameTest there.
+
+**Client tests** (`fiedler.client.FiedlerClientGameTests`) drive the real local player through the client→server packet
+path and check both what the server did and what the client shows:
+
+| Test | What the client does | What is checked |
+|---|---|---|
+| `client_horn_alarm` | blows a Call horn (`MultiPlayerGameMode#useItem`) | the villager takes cover; the client renders the raider glowing |
+| `client_cat_cushion` | watches a tame cat take the cushion, then right-clicks it twice | the client shows the cat seated; the 1st click only shoos (the cat stays off), the 2nd seats the player |
+| `client_brush_moss` | aims at mossy cobblestone and holds the use key with a brush | the block is restored on both sides and a moss carpet drops |
+| `client_graph_command` | types `/fiedler graph` and `/fiedler connections` | the reports arrive in the client's chat |
+| `client_enchanting_glyphs` | — | on the client level, shelves with books feed the enchanting table (what draws glyph particles) and an empty shelf does not |
+
+They are registered only on the client, each in its own batch because they share the one real player. The dedicated
+GameTest server never sees them. While writing them I found and fixed a real bug: a shooed cat used to walk straight
+back onto the cushion before the player could sit. `cat_sits_on_cushion` now guards against that too.
 
 ## Known limits
 
 - The two new recipes have no recipe-book unlock advancements. They can be crafted from the start but don't appear in
   the recipe book until crafted once.
-- Before CI, the client was never launched: the build container can't open a game window. The MC-Runtime-Test step is
-  the client check.
+- The client tests run only in CI: the build container can't open a game window.
 - Install the mod on both client and server. The enchanting-power change runs server-side; the client copy only adds
   the glyph particles.
 - The tests use `GameTestHelper#makeMockServerPlayerInLevel`, which 26.3 marks as deprecated-for-removal (it is still
