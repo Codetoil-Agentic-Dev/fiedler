@@ -161,8 +161,10 @@ public final class FiedlerGameTests {
             brush.onUseTick(level, player, r);
         }
         check(helper, level.getBlockState(helper.absolutePos(target)).is(Blocks.COBBLESTONE), "60 ticks of real brushing should restore the block");
-        // This mock player is hard-wired to creative, where tools never wear (vanilla rule)...
-        check(helper, brush.getDamageValue() == 0, "creative brushes must not wear, got " + brush.getDamageValue());
+        // Wear follows vanilla's rule. The mock player's abilities depend on where the test runs (creative-like on the
+        // dedicated test server, survival-like inside a survival singleplayer world), so derive the expectation.
+        int expectedWear = player.hasInfiniteMaterials() ? 0 : 1;
+        check(helper, brush.getDamageValue() == expectedWear, "brush wear should be " + expectedWear + " here, got " + brush.getDamageValue());
         // ...while in survival one restoration costs exactly one point of durability.
         BlockPos second = new BlockPos(2, 1, 6);
         helper.setBlock(second, Blocks.MOSSY_STONE_BRICK_WALL);
